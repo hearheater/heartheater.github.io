@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Heart Collector Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+        }
+        #gameContainer {
+            width: 90vw;
+            height: 60vh;
+            max-width: 800px;
+            max-height: 600px;
+            border: 2px solid #333;
+            position: relative;
+            overflow: hidden;
+            background-color: #fff;
+            touch-action: manipulation; /* Improves mobile touch response */
+        }
+        .heart {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            transition: transform 0.5s ease-out;
+        }
+        .heart.shrink {
+            transform: scale(0);
+        }
+        #scoreBoard {
+            font-size: clamp(18px, 5vw, 24px);
+            margin: 1vh;
+        }
+        #timer {
+            font-size: clamp(18px, 5vw, 24px);
+            margin: 1vh;
+        }
+        #startButton {
+            padding: 10px 20px;
+            font-size: clamp(16px, 4vw, 18px);
+            margin: 2vh;
+            cursor: pointer;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            touch-action: manipulation;
+        }
+        #startButton:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        @media (max-width: 600px) {
+            .heart {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <p>
+        <div id="scoreBoard">Score: 0</div>
+        <div id="timer">Time: 60</div>
+    </p>
+    <div id="gameContainer"></div>
+    <button id="startButton" onclick="startGame()">Start Game</button>
+
+    <script>
+        const gameContainer = document.getElementById('gameContainer');
+        const scoreBoard = document.getElementById('scoreBoard');
+        const timer = document.getElementById('timer');
+        let score = 0;
+        let timeLeft = 60;
+        let gameInterval;
+        let heartInterval;
+        let spawnRate = 1000;
+
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            
+            heart.innerHTML = `
+                <svg width="100%" height="100%" viewBox="0 0 30 30">
+                    <path d="M15 28 C7 20 1 14 1 8 A7 7 0 0 1 15 8 A7 7 0 0 1 29 8 C29 14 23 20 15 28 Z" 
+                          fill="red" stroke="darkred" stroke-width="1"/>
+                </svg>
+            `;
+
+            const x = Math.random() * (gameContainer.offsetWidth - heart.offsetWidth);
+            const y = Math.random() * (gameContainer.offsetHeight - heart.offsetHeight);
+            heart.style.left = x + 'px';
+            heart.style.top = y + 'px';
+
+            heart.addEventListener('click', () => {
+                score += 1;
+                scoreBoard.textContent = `Score: ${score}`;
+                heart.classList.add('shrink');
+                setTimeout(() => heart.remove(), 500);
+            });
+
+            setTimeout(() => {
+                if (heart.parentElement) {
+                    heart.classList.add('shrink');
+                    setTimeout(() => heart.remove(), 500);
+                }
+            }, 2000);
+
+            gameContainer.appendChild(heart);
+        }
+
+        function updateTimer() {
+            timeLeft -= 0.1;
+            timer.textContent = `Time: ${Math.max(0, Math.round(timeLeft))}`;
+            
+            if (Math.floor(timeLeft) % 10 === 0 && timeLeft > 0) {
+                spawnRate = Math.max(200, spawnRate * 0.8);
+                clearInterval(heartInterval);
+                heartInterval = setInterval(createHeart, spawnRate);
+            }
+
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            timeLeft = 60;
+            spawnRate = 1000;
+            scoreBoard.textContent = `Score: ${score}`;
+            timer.textContent = `Time: ${timeLeft}`;
+            document.getElementById('startButton').disabled = true;
+            
+            gameContainer.innerHTML = '';
+
+            gameInterval = setInterval(updateTimer, 100);
+            heartInterval = setInterval(createHeart, spawnRate);
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(heartInterval);
+            alert(`Game Over! Your score: ${score}`);
+            document.getElementById('startButton').disabled = false;
+        }
+
+        // Prevent default touch behaviors
+        document.addEventListener('touchstart', (e) => {
+            if (e.target.className.includes('heart')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
